@@ -6,9 +6,14 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const prod = process.argv[2] === "production";
 
-// 本机 Obsidian Vault 插件目录（开发部署用；其他机器可改成自己的路径）
-const VAULT_PLUGIN_DIR =
-  "/Users/zhangluxi/Library/Mobile Documents/iCloud~md~obsidian/Documents/Luxi/小说/.obsidian/plugins/seedraft-prompt-sync";
+// 本机 Obsidian Vault 插件目录：从 deploy-target.json 读取（该文件不进 git，见模板 deploy-target.example.json）
+let VAULT_PLUGIN_DIR = "";
+try {
+  VAULT_PLUGIN_DIR =
+    JSON.parse(fs.readFileSync(path.join(__dirname, "deploy-target.json"), "utf8")).vaultPluginDir || "";
+} catch {
+  /* 未配置部署目标时只构建到仓库根 */
+}
 
 const banner = { js: "/* Seedraft Prompt Sync */" };
 
