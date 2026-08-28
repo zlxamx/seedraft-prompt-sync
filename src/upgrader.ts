@@ -84,11 +84,28 @@ export async function applyUpgrade(
   const updated: string[] = [];
   const backedUp: string[] = [];
 
+  // 备份与写入前确保父目录存在（vault.create 不会自动建目录）
+  const ensureParent = async (fullPath: string) => {
+    const parent = fullPath.substring(0, fullPath.lastIndexOf("/"));
+    if (parent && !vault.getFolderByPath(parent)) {
+      await vault.createFolder(parent).catch(() => {});
+    }
+  };
+
   const writeText = async (relPath: string, content: string) => {
     const full = normalizePath(project.rootPath + relPath);
+    await ensureParent(full);
     const existing = vault.getAbstractFileByPath(full);
     if (existing instanceof TFile) await vault.modify(existing, content);
     else await vault.create(full, content);
+  };
+
+  const backupFile = async (relPath: string, content: string) => {
+    const backupPath = normalizePath(`${backupDir}/${relPath}`);
+    await ensureParent(backupPath);
+    const existingBackup = vault.getAbstractFileByPath(backupPath);
+    if (existingBackup instanceof TFile) await vault.modify(existingBackup, content);
+    else await vault.create(backupPath, content);
   };
 
   // 1. 备份 + 覆盖 clean 文件
@@ -96,10 +113,7 @@ export async function applyUpgrade(
     const full = normalizePath(project.rootPath + rel);
     const theirs = await readFileIfExists(vault, full);
     if (theirs != null) {
-      const backupPath = normalizePath(`${backupDir}/${rel}`);
-      const existingBackup = vault.getAbstractFileByPath(backupPath);
-      if (existingBackup instanceof TFile) await vault.modify(existingBackup, theirs);
-      else await vault.create(backupPath, theirs);
+      await backupFile(rel, theirs);
       backedUp.push(rel);
     }
     const newText = await readZipText(zip, rel);
@@ -116,10 +130,7 @@ export async function applyUpgrade(
     // 保险：磁盘上已有文件（索引外残留，如 iCloud 同步延迟），先备份再覆盖
     if (await vault.adapter.exists(full)) {
       const theirs = await vault.adapter.read(full);
-      const backupPath = normalizePath(`${backupDir}/${rel}`);
-      const existingBackup = vault.getAbstractFileByPath(backupPath);
-      if (existingBackup instanceof TFile) await vault.modify(existingBackup, theirs);
-      else await vault.create(backupPath, theirs);
+      await backupFile(rel, theirs);
       backedUp.push(rel);
     }
     await writeText(rel, newText);
@@ -174,6 +185,10 @@ async function appendRecord(
   const existing = vault.getAbstractFileByPath(recordPath);
   const existingText = existing instanceof TFile ? await vault.read(existing) : null;
   if (existingText == null) {
+    const parent = recordPath.substring(0, recordPath.lastIndexOf("/"));
+    if (parent && !vault.getFolderByPath(parent)) {
+      await vault.createFolder(parent).catch(() => {});
+    }
     await vault.create(recordPath, `# 升级记录\n\n${section}`);
   } else {
     const body = existingText.trimEnd() + "\n\n" + section;
