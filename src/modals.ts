@@ -1,10 +1,24 @@
 import type { App } from "obsidian";
 import { ButtonComponent, FuzzySuggestModal, Modal, Notice } from "obsidian";
+import type { FileDiff } from "./diffview";
 
-/** 升级确认弹窗：展示迁移摘要与三方预演结果，确认后执行。 */
+const STATUS_TEXT: Record<FileDiff["status"], string> = {
+  update: "直接更新",
+  new: "新建",
+  conflict: "冲突·保留本地",
+};
+
+const STATUS_CLS: Record<FileDiff["status"], string> = {
+  update: "seedraft-diff-status-update",
+  new: "seedraft-diff-status-new",
+  conflict: "seedraft-diff-status-conflict",
+};
+
+/** 升级确认弹窗：展示迁移摘要、逐文件可展开的行级 diff 与升级说明。 */
 export class ConfirmUpgradeModal extends Modal {
   private title: string;
   private lines: string[];
+  private diffs: FileDiff[];
   private onConfirm: () => Promise<void>;
   private onCancel: () => void;
   private confirmText: string;
@@ -14,6 +28,7 @@ export class ConfirmUpgradeModal extends Modal {
     app: App,
     title: string,
     lines: string[],
+    diffs: FileDiff[],
     onConfirm: () => Promise<void>,
     onCancel: () => void,
     confirmText = "执行升级"
@@ -21,6 +36,7 @@ export class ConfirmUpgradeModal extends Modal {
     super(app);
     this.title = title;
     this.lines = lines;
+    this.diffs = diffs;
     this.onConfirm = onConfirm;
     this.onCancel = onCancel;
     this.confirmText = confirmText;
@@ -28,11 +44,20 @@ export class ConfirmUpgradeModal extends Modal {
 
   onOpen(): void {
     const { contentEl } = this;
+    contentEl.addClass("seedraft-modal");
     contentEl.createEl("h3", { text: this.title });
+
     const list = contentEl.createEl("div", { cls: "seedraft-confirm-list" });
     for (const line of this.lines) {
-      list.createEl("div", { text: line });
+      list.createEl("div", { cls: "seedraft-confirm-line", text: line });
     }
+
+    // 逐文件可展开 diff
+    if (this.diffs.length > 0) {
+      const diffTitle = contentEl.createEl("div", { cls: "seedraft-diff-title", text: "文件差异（点击展开）" });
+      for (const d of this.diffs) this.renderDiffItem(contentEl, d);
+    }
+
     const buttons = contentEl.createDiv();
     buttons.style.display = "flex";
     buttons.style.gap = "8px";
@@ -57,9 +82,50 @@ export class ConfirmUpgradeModal extends Modal {
     });
   }
 
+  private renderDiffItem(parent: HTMLElement, d: FileDiff): void {
+    const item = parent.createDiv({ cls: "seedraft-diff-item" });
+    const header = item.createDiv({ cls: "seedraft-diff-header" });
+    const name = header.createSpan({ cls: "seedraft-diff-name", text: d.path });
+    header.createSpan({ cls: `seedraft-diff-status ${STATUS_CLS[d.status]}`, text: STATUS_TEXT[d.status] });
+    if (d.fileTime) {
+      header.createSpan({ cls: "seedraft-diff-time", text: `官方更新于 ${formatDate(d.fileTime)}` });
+    }
+    header.createSpan({ cls: "seedraft-diff-stats", text: `+${d.added} -${d.removed}` });
+    header.createSpan({ cls: "seedraft-diff-toggle", text: "▸" });
+
+    const body = item.createDiv({ cls: "seedraft-diff-body" });
+    body.hide();
+    if (d.added === 0 && d.removed === 0) {
+      body.createEl("div", { cls: "seedraft-diff-empty", text: "内容无变化" });
+    } else {
+      for (const l of d.lines) {
+        body.createEl("div", {
+          cls: l.type === "add" ? "seedraft-diff-add" : "seedraft-diff-del",
+          text: (l.type === "add" ? "+ " : "- ") + l.text,
+        });
+      }
+      if (d.truncated) {
+        body.createEl("div", { cls: "seedraft-diff-more", text: "… 差异行过多，仅显示前 120 行" });
+      }
+    }
+    header.addEventListener("click", () => {
+      const shown = body.isShown();
+      if (shown) body.hide();
+      else body.show();
+      const toggle = header.querySelector(".seedraft-diff-toggle");
+      if (toggle) toggle.toggleClass("open", !shown);
+    });
+  }
+
   onClose(): void {
     this.contentEl.empty();
   }
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
 /** 通用选择器。 */

@@ -135,3 +135,112 @@
   padding-top: 12px;
   margin-top: 2px;
 }
+
+/* ── diff 预览 ── */
+.seedraft-modal .seedraft-diff-title {
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 0.8em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.seedraft-diff-item {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.seedraft-diff-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  background: var(--background-secondary);
+  font-size: 0.9em;
+}
+
+.seedraft-diff-header:hover {
+  background: var(--background-modifier-hover);
+}
+
+.seedraft-diff-name {
+  font-weight: 600;
+}
+
+.seedraft-diff-status {
+  font-size: 0.72em;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.seedraft-diff-status-update {
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.seedraft-diff-status-new {
+  background: var(--color-green, #27ae60);
+  color: #fff;
+}
+
+.seedraft-diff-status-conflict {
+  background: var(--color-orange, #e67e22);
+  color: #fff;
+}
+
+.seedraft-diff-stats {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+  font-size: 0.85em;
+}
+
+.seedraft-diff-toggle {
+  color: var(--text-muted);
+  transition: transform 0.15s;
+}
+
+.seedraft-diff-toggle.open {
+  transform: rotate(90deg);
+}
+
+.seedraft-diff-body {
+  max-height: 260px;
+  overflow-y: auto;
+  font-family: var(--font-monospace);
+  font-size: 0.82em;
+  line-height: 1.5;
+  padding: 4px 0;
+}
+
+.seedraft-diff-add {
+  background: rgba(46, 204, 113, 0.15);
+  color: var(--text-normal);
+  padding: 1px 10px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.seedraft-diff-del {
+  background: rgba(231, 76, 60, 0.12);
+  color: var(--text-muted);
+  padding: 1px 10px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.seedraft-diff-empty,
+.seedraft-diff-more {
+  color: var(--text-muted);
+  padding: 6px 10px;
+  font-size: 0.9em;
+}
+
+.seedraft-diff-time {
+  color: var(--text-faint);
+  font-size: 0.78em;
+}

@@ -1,5 +1,6 @@
-import { Notice, Plugin, TFolder } from "obsidian";
+import { Notice, Plugin, TFolder, normalizePath } from "obsidian";
 import type JSZip from "jszip";
+import { computeFileDiff, type FileDiff } from "./diffview";
 import { GitHubClient } from "./github";
 import { ConfirmUpgradeModal, pick, showUpgradeResult } from "./modals";
 import { readFileIfExists, scanProjects } from "./scanner";
@@ -181,10 +182,31 @@ export default class SeedraftSyncPlugin extends Plugin {
       for (const l of migrationText.split("\n")) lines.push(l);
     }
 
+    // 逐文件行级 diff：直接更新/冲突 = B 侧现状 vs 新版本；新建 = 空 vs 新版本
+    const diffs: FileDiff[] = [];
+    for (const t of analysis.targets) {
+      const newText = (await readZipText(zip, t)) ?? "";
+      const inClean = analysis.clean.includes(t);
+      const isConflict = analysis.conflicts.some((c) => c.path === t);
+      const isNew = analysis.newFiles.includes(t);
+      const oldText =
+        inClean || isConflict
+          ? (await readFileIfExists(this.app.vault, normalizePath(proj.rootPath + t))) ?? ""
+          : "";
+      const d = computeFileDiff(oldText, newText);
+      diffs.push({
+        path: t,
+        status: isNew ? "new" : isConflict ? "conflict" : "update",
+        fileTime: manifest.fileTimes?.[t],
+        ...d,
+      });
+    }
+
     new ConfirmUpgradeModal(
       this.app,
       `升级 ${proj.rootPath}`,
       lines,
+      diffs,
       async () => {
         try {
           const report = await applyUpgrade(this.app, proj, zip, manifest, analysis);
@@ -323,6 +345,7 @@ export default class SeedraftSyncPlugin extends Plugin {
                   this.app,
                   "登记旧项目",
                   lines,
+                  [],
                   async () => {
                     try {
                       const state = {

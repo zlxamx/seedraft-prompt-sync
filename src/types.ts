@@ -17,6 +17,8 @@ export interface StandardManifest {
   changedFiles: string[];
   standardFiles: StandardFileEntry[];
   hashes: Record<string, string>;
+  /** 可选：白名单文件官方最后修改时间（ISO 8601），仅作展示 */
+  fileTimes?: Record<string, string>;
 }
 
 export interface BState {
