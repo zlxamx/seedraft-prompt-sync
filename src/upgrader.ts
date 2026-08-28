@@ -79,7 +79,7 @@ export async function applyUpgrade(
   const state = project.state;
   if (!state) throw new Error("项目缺少版本记录");
 
-  const backupDir = normalizePath(`${project.rootPath}.seedraft-backup/v${analysis.fromVersion}`);
+  const backupDir = normalizePath(`${project.rootPath}seedraft-backup/v${analysis.fromVersion}`);
   const updated: string[] = [];
   const backedUp: string[] = [];
 
@@ -154,7 +154,7 @@ async function appendRecord(
     `- 直接更新：${analysis.clean.length > 0 ? analysis.clean.join("、") : "（无）"}`,
     `- 新建文件：${analysis.newFiles.length > 0 ? analysis.newFiles.join("、") : "（无）"}`,
     `- 冲突（保留本地，未覆盖）：${analysis.conflicts.length > 0 ? analysis.conflicts.map((c) => c.path).join("、") : "（无）"}`,
-    `- 备份：.seedraft-backup/v${analysis.fromVersion}/`,
+    `- 备份：seedraft-backup/v${analysis.fromVersion}/`,
     "",
   ].join("\n");
 

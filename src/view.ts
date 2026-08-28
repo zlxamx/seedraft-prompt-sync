@@ -83,7 +83,11 @@ export class SyncView extends ItemView {
       info.setText("状态文件损坏或无法解析");
       return;
     }
-    const upgradable = latestVersion && compareSemver(proj.state.standardVersion, latestVersion) < 0;
+    if (!latestVersion) {
+      info.setText(`当前 v${proj.state.standardVersion}（尚未检查最新版本，请先「检查更新」）`);
+      return;
+    }
+    const upgradable = compareSemver(proj.state.standardVersion, latestVersion) < 0;
     info.setText(
       upgradable
         ? `当前 v${proj.state.standardVersion} → 可升级到 v${latestVersion}`

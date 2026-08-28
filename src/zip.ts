@@ -2,7 +2,9 @@ import JSZip from "jszip";
 import type { StandardManifest } from "./types";
 
 export const STANDARD_ID = "seedraft-prompt-system";
-export const STATE_FILE_NAME = ".seedraft-standard.json";
+export const STATE_FILE_NAME = "seedraft-standard.json";
+/** 旧版状态文件名（v0.1.2 及以前），扫描时自动迁移 */
+export const OLD_STATE_FILE_NAME = ".seedraft-standard.json";
 
 export async function loadZip(buffer: ArrayBuffer | Uint8Array): Promise<JSZip> {
   return JSZip.loadAsync(buffer);

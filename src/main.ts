@@ -102,16 +102,20 @@ export default class SeedraftSyncPlugin extends Plugin {
       if (manifest.standardId !== STANDARD_ID) {
         throw new Error(`standardId 不匹配：${manifest.standardId}`);
       }
+      await this.refreshProjects();
       this.checkResult = { ok: true, manifest, tag, checkedAt: now };
       this.settings.lastCheckAt = now;
       await this.saveSettings();
+      const registered = this.projects.filter((p) => p.state).length;
       const upgradable = this.projects.filter(
         (p) => p.state && compareSemver(p.state.standardVersion, manifest.version) < 0
       ).length;
-      if (upgradable > 0) {
-        new Notice(`Seedraft 标准库有新版本 v${manifest.version}，${upgradable} 个项目可升级`);
+      if (registered === 0) {
+        new Notice(`Seedraft 标准库最新版本 v${manifest.version}；Vault 中还没有已登记项目，请先「登记旧项目」`);
+      } else if (upgradable > 0) {
+        new Notice(`Seedraft 标准库有新版本 v${manifest.version}，${upgradable}/${registered} 个项目可升级`);
       } else {
-        new Notice(`Seedraft 标准库最新版本 v${manifest.version}，所有项目已是最新`);
+        new Notice(`Seedraft 标准库最新版本 v${manifest.version}，${registered} 个已登记项目均是最新`);
       }
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
@@ -184,7 +188,7 @@ export default class SeedraftSyncPlugin extends Plugin {
           showUpgradeResult(this.app, [
             `已更新 ${report.updated.length} 个文件`,
             `冲突 ${report.conflicts.length} 个（详见升级记录）`,
-            `已备份 ${report.backedUp.length} 个文件 → .seedraft-backup/v${report.fromVersion}/`,
+            `已备份 ${report.backedUp.length} 个文件 → seedraft-backup/v${report.fromVersion}/`,
             `升级记录：${report.recordPath}`,
           ]);
         } catch (e) {
@@ -259,7 +263,7 @@ export default class SeedraftSyncPlugin extends Plugin {
       if (f.name !== "Gemini.md" || !f.parent) continue;
       if (seen.has(f.parent.path)) continue;
       seen.add(f.parent.path);
-      if (this.app.vault.getAbstractFileByPath(`${f.parent.path}/${STATE_FILE_NAME}`)) continue;
+      if (await this.app.vault.adapter.exists(`${f.parent.path}/${STATE_FILE_NAME}`)) continue;
       candidates.push(f.parent);
     }
     if (candidates.length === 0) {
