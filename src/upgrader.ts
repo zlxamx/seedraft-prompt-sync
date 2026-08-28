@@ -4,6 +4,7 @@ import type JSZip from "jszip";
 import type { BProject, ConflictEntry, StandardManifest, UpgradeAnalysis, UpgradeReport } from "./types";
 import { sha256Hex, today } from "./utils";
 import { readZipText } from "./zip";
+import { readFileIfExists } from "./scanner";
 
 /** 迁移目标：changedFiles 中属于白名单的文件；changedFiles 为空则取全部白名单。 */
 function resolveTargets(manifest: StandardManifest): { path: string; mode: "overwrite" | "merge" }[] {
@@ -51,7 +52,7 @@ export async function analyzeUpgrade(
       continue;
     }
     const theirsPath = normalizePath(project.rootPath + t.path);
-    const theirs = await vault.adapter.read(theirsPath).catch(() => null);
+    const theirs = await readFileIfExists(vault, theirsPath);
     if (theirs == null) {
       analysis.newFiles.push(t.path);
       continue;
@@ -92,13 +93,15 @@ export async function applyUpgrade(
 
   // 1. 备份 + 覆盖 clean 文件
   for (const rel of analysis.clean) {
-    const theirs = await vault.adapter.read(normalizePath(project.rootPath + rel));
-    const backupPath = normalizePath(`${backupDir}/${rel}`);
-    const existingBackup = vault.getAbstractFileByPath(backupPath);
-    if (existingBackup instanceof TFile) await vault.modify(existingBackup, theirs);
-    else await vault.create(backupPath, theirs);
-    backedUp.push(rel);
-
+    const full = normalizePath(project.rootPath + rel);
+    const theirs = await readFileIfExists(vault, full);
+    if (theirs != null) {
+      const backupPath = normalizePath(`${backupDir}/${rel}`);
+      const existingBackup = vault.getAbstractFileByPath(backupPath);
+      if (existingBackup instanceof TFile) await vault.modify(existingBackup, theirs);
+      else await vault.create(backupPath, theirs);
+      backedUp.push(rel);
+    }
     const newText = await readZipText(zip, rel);
     if (newText == null) continue;
     await writeText(rel, newText);
@@ -109,6 +112,16 @@ export async function applyUpgrade(
   for (const rel of analysis.newFiles) {
     const newText = await readZipText(zip, rel);
     if (newText == null) continue;
+    const full = normalizePath(project.rootPath + rel);
+    // 保险：磁盘上已有文件（索引外残留，如 iCloud 同步延迟），先备份再覆盖
+    if (await vault.adapter.exists(full)) {
+      const theirs = await vault.adapter.read(full);
+      const backupPath = normalizePath(`${backupDir}/${rel}`);
+      const existingBackup = vault.getAbstractFileByPath(backupPath);
+      if (existingBackup instanceof TFile) await vault.modify(existingBackup, theirs);
+      else await vault.create(backupPath, theirs);
+      backedUp.push(rel);
+    }
     await writeText(rel, newText);
     updated.push(rel);
   }
@@ -158,13 +171,13 @@ async function appendRecord(
     "",
   ].join("\n");
 
-  const existing = await vault.adapter.read(recordPath).catch(() => null);
-  if (existing == null) {
+  const existing = vault.getAbstractFileByPath(recordPath);
+  const existingText = existing instanceof TFile ? await vault.read(existing) : null;
+  if (existingText == null) {
     await vault.create(recordPath, `# 升级记录\n\n${section}`);
   } else {
-    const body = existing.trimEnd() + "\n\n" + section;
-    const file = vault.getAbstractFileByPath(recordPath);
-    if (file instanceof TFile) await vault.modify(file, body);
+    const body = existingText.trimEnd() + "\n\n" + section;
+    if (existing instanceof TFile) await vault.modify(existing, body);
     else await vault.create(recordPath, body);
   }
 }

@@ -2,7 +2,7 @@ import { Notice, Plugin, TFolder } from "obsidian";
 import type JSZip from "jszip";
 import { GitHubClient } from "./github";
 import { ConfirmUpgradeModal, pick, showUpgradeResult } from "./modals";
-import { scanProjects } from "./scanner";
+import { readFileIfExists, scanProjects } from "./scanner";
 import { DEFAULT_SETTINGS, SeedraftSettingTab, type SeedraftSettings } from "./settings";
 import type { BProject, CheckResult, StandardManifest } from "./types";
 import { analyzeUpgrade, applyUpgrade } from "./upgrader";
@@ -217,7 +217,7 @@ export default class SeedraftSyncPlugin extends Plugin {
       "选择发布 ZIP…",
       async (file) => {
         try {
-          const buf = await this.app.vault.adapter.readBinary(file.path);
+          const buf = await this.app.vault.readBinary(file);
           const zip = await loadZip(buf);
           const manifest = await readManifestFromZip(zip);
           if (manifest.standardId !== STANDARD_ID) {
@@ -303,7 +303,7 @@ export default class SeedraftSyncPlugin extends Plugin {
                 }
                 const modified: string[] = [];
                 for (const std of manifest.standardFiles) {
-                  const theirs = await this.app.vault.adapter.read(`${folder.path}/${std.path}`).catch(() => null);
+                  const theirs = await readFileIfExists(this.app.vault, `${folder.path}/${std.path}`);
                   if (theirs == null) continue;
                   const hash = await sha256Hex(theirs);
                   if (manifest.hashes[std.path] && manifest.hashes[std.path] !== hash) modified.push(std.path);

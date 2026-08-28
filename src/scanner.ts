@@ -1,5 +1,5 @@
 import type { Vault } from "obsidian";
-import { TFolder } from "obsidian";
+import { TFile, TFolder } from "obsidian";
 import type { BProject, BState } from "./types";
 import { OLD_STATE_FILE_NAME, STATE_FILE_NAME } from "./zip";
 
@@ -55,4 +55,14 @@ async function migrateOldStateFiles(vault: Vault): Promise<void> {
 /** 判断目录下是否有某个文件。 */
 export function folderHasFile(vault: Vault, folderPath: string, fileName: string): boolean {
   return vault.getAbstractFileByPath(`${folderPath}/${fileName}`) != null;
+}
+
+/**
+ * 读取项目内文件。索引内的文件用 vault.read（会等待 iCloud 占位文件下载），
+ * 索引外不存在的返回 null。不要用 adapter.read 直接读项目文件。
+ */
+export async function readFileIfExists(vault: Vault, fullPath: string): Promise<string | null> {
+  const existing = vault.getAbstractFileByPath(fullPath);
+  if (existing instanceof TFile) return vault.read(existing);
+  return null;
 }
