@@ -15,6 +15,7 @@ export default class SeedraftSyncPlugin extends Plugin {
   private client: GitHubClient | null = null;
   projects: BProject[] = [];
   checkResult: CheckResult | null = null;
+  checking = false;
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -97,6 +98,7 @@ export default class SeedraftSyncPlugin extends Plugin {
       new Notice("Seedraft 同步：未配置 GitHub Token，无法在线检查；可先用「从 ZIP 导入」");
       return;
     }
+    this.checking = true;
     try {
       const { tag, manifest } = await this.getClient().getLatestManifest();
       if (manifest.standardId !== STANDARD_ID) {
@@ -121,6 +123,9 @@ export default class SeedraftSyncPlugin extends Plugin {
       const message = e instanceof Error ? e.message : String(e);
       this.checkResult = { ok: false, error: message, checkedAt: now };
       new Notice(`Seedraft 同步：检查失败——${message}`);
+    } finally {
+      this.checking = false;
+      await this.refreshView();
     }
   }
 

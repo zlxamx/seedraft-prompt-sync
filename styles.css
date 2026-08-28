@@ -1,32 +1,137 @@
 .seedraft-sync {
-  padding: 8px 12px;
-}
-.seedraft-status p {
-  margin: 4px 0;
-}
-.seedraft-actions {
+  padding: 16px;
   display: flex;
-  gap: 8px;
-  margin: 10px 0 14px;
+  flex-direction: column;
+  gap: 12px;
 }
+
+.seedraft-header-title {
+  font-weight: 700;
+  font-size: 1.15em;
+}
+
+.seedraft-header-sub {
+  color: var(--text-muted);
+  font-size: 0.85em;
+  margin-top: 2px;
+}
+
+/* ── 标准库状态卡 ── */
+.seedraft-std-card {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: var(--background-secondary);
+}
+
+.seedraft-std-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.seedraft-version {
+  font-weight: 700;
+  font-size: 1.05em;
+}
+
+.seedraft-badge {
+  font-size: 0.72em;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.seedraft-badge-ok {
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.seedraft-badge-update {
+  background: var(--color-orange, #e67e22);
+  color: #fff;
+}
+
+.seedraft-sub {
+  color: var(--text-muted);
+  font-size: 0.85em;
+  margin-top: 2px;
+}
+
+.seedraft-error {
+  color: var(--text-error);
+}
+
+.seedraft-warn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 0.85em;
+  color: var(--text-warning);
+}
+
+/* ── 项目列表 ── */
+.seedraft-section-title {
+  color: var(--text-muted);
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+.seedraft-projects {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .seedraft-project {
   border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  padding: 8px 12px;
-  margin-bottom: 10px;
+  border-radius: 8px;
+  padding: 10px 14px;
 }
+
 .seedraft-project-name {
   font-weight: 600;
   margin-bottom: 4px;
 }
-.seedraft-project-info {
-  font-size: 0.9em;
-  color: var(--text-muted);
-  margin-bottom: 6px;
+
+.seedraft-project-row {
+  display: flex;
+  align-items: center;
 }
-.seedraft-confirm-list {
-  max-height: 300px;
-  overflow-y: auto;
-  margin: 8px 0;
-  padding-left: 18px;
+
+.seedraft-changes {
+  color: var(--text-muted);
+  font-size: 0.85em;
+  margin: 4px 0 8px;
+}
+
+/* ── 空状态 ── */
+.seedraft-empty {
+  text-align: center;
+  padding: 22px 12px;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: 8px;
+}
+
+.seedraft-empty-title {
+  font-weight: 600;
+}
+
+.seedraft-empty .seedraft-sub {
+  margin: 6px 0 12px;
+}
+
+/* ── 工具区 ── */
+.seedraft-tools {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: 12px;
+  margin-top: 2px;
 }
