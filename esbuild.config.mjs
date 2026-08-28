@@ -8,7 +8,7 @@ const prod = process.argv[2] === "production";
 
 // 本机 Obsidian Vault 插件目录（开发部署用；其他机器可改成自己的路径）
 const VAULT_PLUGIN_DIR =
-  "/Users/zhangluxi/Library/Mobile Documents/iCloud~md~obsidian/Documents/.obsidian/plugins/seedraft-prompt-sync";
+  "/Users/zhangluxi/Library/Mobile Documents/iCloud~md~obsidian/Documents/Luxi/小说/.obsidian/plugins/seedraft-prompt-sync";
 
 const banner = { js: "/* Seedraft Prompt Sync */" };
 
