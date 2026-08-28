@@ -4,8 +4,8 @@ import { loadZip, readManifestFromZip } from "./zip";
 import type { StandardManifest } from "./types";
 
 interface GitHubAsset {
+  id: number;
   name: string;
-  browser_download_url: string;
 }
 
 interface ReleaseData {
@@ -13,7 +13,11 @@ interface ReleaseData {
   assets: GitHubAsset[];
 }
 
-/** GitHub Release API 客户端。私有仓库需要用户提供只读 PAT。 */
+/**
+ * GitHub Release API 客户端。私有仓库需要用户提供只读 PAT。
+ * 资产下载统一走 api.github.com 的 assets 端点（避开 github.com
+ * 下载域名的网络可达性问题）。
+ */
 export class GitHubClient {
   private repo: string;
   private token: string;
@@ -41,9 +45,9 @@ export class GitHubClient {
     return res.json as T;
   }
 
-  private async download(url: string): Promise<ArrayBuffer> {
+  private async downloadAsset(assetId: number): Promise<ArrayBuffer> {
     const res = await requestUrl({
-      url,
+      url: `https://api.github.com/repos/${this.repo}/releases/assets/${assetId}`,
       headers: this.authHeaders({ Accept: "application/octet-stream" }),
       throw: false,
     });
@@ -62,7 +66,7 @@ export class GitHubClient {
     const release = await this.latestRelease();
     const manifestAsset = release.assets.find((a) => a.name === "manifest.json");
     if (manifestAsset) {
-      const buf = await this.download(manifestAsset.browser_download_url);
+      const buf = await this.downloadAsset(manifestAsset.id);
       return { tag: release.tag_name, manifest: JSON.parse(new TextDecoder().decode(buf)) as StandardManifest };
     }
     const zipAsset = release.assets.find((a) => a.name.endsWith(".zip"));
@@ -76,7 +80,7 @@ export class GitHubClient {
     const release = await this.api<ReleaseData>(`/releases/tags/${tag}`);
     const zipAsset = release.assets.find((a) => a.name.endsWith(".zip"));
     if (!zipAsset) throw new Error(`Release ${tag} 没有 ZIP 资产`);
-    const buf = await this.download(zipAsset.browser_download_url);
+    const buf = await this.downloadAsset(zipAsset.id);
     return loadZip(buf);
   }
 
