@@ -1,0 +1,10 @@
+{
+  "id": "seedraft-prompt-sync",
+  "name": "Seedraft Prompt Sync",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "把 Seedraft 标准库更新同步到各小说项目：检查新版本、自动备份、迁移标准文件、冲突报告。",
+  "author": "zlxamx",
+  "authorUrl": "https://github.com/zlxamx",
+  "isDesktopOnly": false
+}

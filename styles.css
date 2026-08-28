@@ -1,0 +1,32 @@
+.seedraft-sync {
+  padding: 8px 12px;
+}
+.seedraft-status p {
+  margin: 4px 0;
+}
+.seedraft-actions {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 14px;
+}
+.seedraft-project {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+}
+.seedraft-project-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.seedraft-project-info {
+  font-size: 0.9em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.seedraft-confirm-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 8px 0;
+  padding-left: 18px;
+}
