@@ -32,13 +32,15 @@ export class SeedraftSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("访问令牌")
-      .setDesc("标准库是私有仓库时需要。只需 repo 只读权限（勾选 repo → public_repo 或私有仓库读取）。仅保存在本机插件配置中。")
+      .setDesc("标准库是私有仓库时需要。只需 repo 只读权限。仅保存在本机插件配置中。粘贴时自动去除空格与换行。")
       .addText((text) =>
         text
-          .setPlaceholder("ghp_… 或 gho_…")
+          .setPlaceholder("github_pat_… 或 gho_…")
           .setValue(this.plugin.settings.token)
           .onChange(async (value) => {
-            this.plugin.settings.token = value.trim();
+            // 净化：去除所有空白字符（GitHub 页面复制时可能带换行/空格）
+            const clean = value.replace(/\s+/g, "");
+            this.plugin.settings.token = clean;
             this.plugin.invalidateClient();
             await this.plugin.saveSettings();
           })

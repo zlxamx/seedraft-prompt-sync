@@ -44,6 +44,8 @@ export default class SeedraftSyncPlugin extends Plugin {
 
   async loadSettings(): Promise<void> {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    // 加载时净化 token（旧版本可能存过带空白字符的值）
+    this.settings.token = (this.settings.token || "").replace(/\s+/g, "");
   }
 
   async saveSettings(): Promise<void> {
