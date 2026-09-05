@@ -10,7 +10,7 @@ export interface SeedraftSettings {
 }
 
 export const DEFAULT_SETTINGS: SeedraftSettings = {
-  repo: "zlxamx/Seedraft-Prompt-System",
+  repo: "wenya-seedraft/Seedraft-Prompt-System",
   token: "",
   checkIntervalHours: 24,
   lastCheckAt: 0,
@@ -51,7 +51,7 @@ export class SeedraftSettingTab extends PluginSettingTab {
       .setDesc("owner/repo 格式。")
       .addText((text) =>
         text
-          .setPlaceholder("zlxamx/Seedraft-Prompt-System")
+          .setPlaceholder("wenya-seedraft/Seedraft-Prompt-System")
           .setValue(this.plugin.settings.repo)
           .onChange(async (value) => {
             this.plugin.settings.repo = value.trim();

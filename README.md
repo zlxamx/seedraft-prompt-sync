@@ -1,6 +1,6 @@
 # Seedraft Prompt Sync
 
-Obsidian 插件：把 [Seedraft 标准库](https://github.com/zlxamx/Seedraft-Prompt-System) 的更新同步到 Vault 中的各小说项目（B 项目）。
+Obsidian 插件：把 [Seedraft 标准库](https://github.com/wenya-seedraft/Seedraft-Prompt-System) 的更新同步到 Vault 中的各小说项目（B 项目）。
 
 ## 工作原理
 
@@ -17,7 +17,7 @@ Obsidian 插件：把 [Seedraft 标准库](https://github.com/zlxamx/Seedraft-Pr
 ## 使用
 
 1. 安装插件（BRAT：添加本仓库，从 Release 安装）。
-2. 设置里填 GitHub Token（只需 `repo` 只读权限），标准库仓库默认 `zlxamx/Seedraft-Prompt-System`。
+2. 设置里填 GitHub Token（只需 `repo` 只读权限），标准库仓库默认 `wenya-seedraft/Seedraft-Prompt-System`。
 3. 首次使用：运行命令「登记旧项目」，为每个已有小说项目建立版本记录。
 4. 打开同步面板（左侧功能区图标或命令），查看可升级项目，点击「升级」。
 5. 无网络 / 无 Token：把发布 ZIP 放进 Vault，运行「从 ZIP 导入」。
