@@ -244,3 +244,26 @@
   color: var(--text-faint);
   font-size: 0.78em;
 }
+
+/* 冲突文件替换复选框 */
+.seedraft-diff-replace {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8em;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.seedraft-diff-replace:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+.seedraft-diff-replace.checked {
+  color: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}

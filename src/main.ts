@@ -209,14 +209,15 @@ export default class SeedraftSyncPlugin extends Plugin {
       `升级 ${proj.rootPath}`,
       lines,
       diffs,
-      async () => {
+      async (replacePaths) => {
         try {
-          const report = await applyUpgrade(this.app, proj, zip, manifest, analysis);
+          const report = await applyUpgrade(this.app, proj, zip, manifest, analysis, replacePaths);
           await this.refreshProjects();
           await this.refreshView();
           showUpgradeResult(this.app, [
             `已更新 ${report.updated.length} 个文件`,
-            `冲突 ${report.conflicts.length} 个（详见升级记录）`,
+            `其中冲突替换 ${report.replaced.length} 个（已备份）`,
+            `保留本地 ${report.conflicts.length - report.replaced.length} 个（详见升级记录）`,
             `已备份 ${report.backedUp.length} 个文件 → seedraft-backup/v${report.fromVersion}/`,
             `升级记录：${report.recordPath}`,
           ]);

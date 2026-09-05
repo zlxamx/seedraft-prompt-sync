@@ -69,6 +69,8 @@ export interface UpgradeReport {
   toVersion: string;
   updated: string[];
   conflicts: ConflictEntry[];
+  /** 用户选择替换为官方新版的冲突文件 */
+  replaced: string[];
   backedUp: string[];
   recordPath: string;
 }

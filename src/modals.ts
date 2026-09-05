@@ -14,22 +14,23 @@ const STATUS_CLS: Record<FileDiff["status"], string> = {
   conflict: "seedraft-diff-status-conflict",
 };
 
-/** 升级确认弹窗：展示迁移摘要、逐文件可展开的行级 diff 与升级说明。 */
+/** 升级确认弹窗：展示迁移摘要、逐文件可展开的行级 diff（冲突文件可勾选“替换”）与升级说明。 */
 export class ConfirmUpgradeModal extends Modal {
   private title: string;
   private lines: string[];
   private diffs: FileDiff[];
-  private onConfirm: () => Promise<void>;
+  private onConfirm: (replacePaths: string[]) => Promise<void>;
   private onCancel: () => void;
   private confirmText: string;
   private busy = false;
+  private replaceSet = new Set<string>();
 
   constructor(
     app: App,
     title: string,
     lines: string[],
     diffs: FileDiff[],
-    onConfirm: () => Promise<void>,
+    onConfirm: (replacePaths: string[]) => Promise<void>,
     onCancel: () => void,
     confirmText = "执行升级"
   ) {
@@ -54,7 +55,7 @@ export class ConfirmUpgradeModal extends Modal {
 
     // 逐文件可展开 diff
     if (this.diffs.length > 0) {
-      const diffTitle = contentEl.createEl("div", { cls: "seedraft-diff-title", text: "文件差异（点击展开）" });
+      const diffTitle = contentEl.createEl("div", { cls: "seedraft-diff-title", text: "文件差异（点击展开；冲突文件勾选“替换”即用官方新版覆盖）" });
       for (const d of this.diffs) this.renderDiffItem(contentEl, d);
     }
 
@@ -69,7 +70,7 @@ export class ConfirmUpgradeModal extends Modal {
         if (this.busy) return;
         this.busy = true;
         try {
-          await this.onConfirm();
+          await this.onConfirm([...this.replaceSet]);
           this.close();
         } catch (e) {
           this.busy = false;
@@ -90,6 +91,25 @@ export class ConfirmUpgradeModal extends Modal {
     if (d.fileTime) {
       header.createSpan({ cls: "seedraft-diff-time", text: `官方更新于 ${formatDate(d.fileTime)}` });
     }
+
+    // 冲突文件：替换复选框（勾选 → 升级时用官方新版覆盖并备份）
+    let replaceLabel: HTMLElement | null = null;
+    if (d.status === "conflict") {
+      replaceLabel = header.createEl("label", { cls: "seedraft-diff-replace" });
+      const cb = replaceLabel.createEl("input", { type: "checkbox" });
+      cb.addEventListener("click", (e) => e.stopPropagation());
+      cb.addEventListener("change", () => {
+        if (cb.checked) this.replaceSet.add(d.path);
+        else this.replaceSet.delete(d.path);
+        if (cb.checked) {
+          replaceLabel?.addClass("checked");
+        } else {
+          replaceLabel?.removeClass("checked");
+        }
+      });
+      replaceLabel.createSpan({ text: "替换" });
+    }
+
     header.createSpan({ cls: "seedraft-diff-stats", text: `+${d.added} -${d.removed}` });
     header.createSpan({ cls: "seedraft-diff-toggle", text: "▸" });
 

@@ -68,13 +68,15 @@ export async function analyzeUpgrade(
   return analysis;
 }
 
-/** 执行升级：备份 → 覆盖 → 升级记录 → 更新状态文件。调用前必须先 analyzeUpgrade。 */
+/** 执行升级：备份 → 覆盖 → 升级记录 → 更新状态文件。调用前必须先 analyzeUpgrade。
+ *  replacePaths：用户选择“替换”的冲突文件路径（备份后覆盖为官方新版），其余冲突保留本地。 */
 export async function applyUpgrade(
   app: App,
   project: BProject,
   zip: JSZip,
   manifest: StandardManifest,
-  analysis: UpgradeAnalysis
+  analysis: UpgradeAnalysis,
+  replacePaths: string[] = []
 ): Promise<UpgradeReport> {
   const vault = app.vault;
   const state = project.state;
@@ -83,6 +85,7 @@ export async function applyUpgrade(
   const backupDir = normalizePath(`${project.rootPath}seedraft-backup/v${analysis.fromVersion}`);
   const updated: string[] = [];
   const backedUp: string[] = [];
+  const replaced: string[] = [];
 
   // 备份与写入前确保父目录存在（vault.create 不会自动建目录）
   const ensureParent = async (fullPath: string) => {
@@ -137,11 +140,28 @@ export async function applyUpgrade(
     updated.push(rel);
   }
 
-  // 3. 升级记录
-  const recordPath = normalizePath(project.rootPath + "升级记录.md");
-  await appendRecord(vault, recordPath, manifest, analysis);
+  // 3. 用户选择替换的冲突文件：备份 + 覆盖官方新版
+  const replaceSet = new Set(replacePaths);
+  for (const c of analysis.conflicts) {
+    if (!replaceSet.has(c.path)) continue;
+    const full = normalizePath(project.rootPath + c.path);
+    const theirs = await readFileIfExists(vault, full);
+    if (theirs != null) {
+      await backupFile(c.path, theirs);
+      backedUp.push(c.path);
+    }
+    const newText = await readZipText(zip, c.path);
+    if (newText == null) continue;
+    await writeText(c.path, newText);
+    updated.push(c.path);
+    replaced.push(c.path);
+  }
 
-  // 4. 更新状态文件：版本 + 官方基线哈希（冲突文件也更新为官方基线，下次升级会继续报告）
+  // 4. 升级记录
+  const recordPath = normalizePath(project.rootPath + "升级记录.md");
+  await appendRecord(vault, recordPath, manifest, analysis, replaced);
+
+  // 5. 更新状态文件：版本 + 官方基线哈希（冲突文件也更新为官方基线，下次升级会继续报告）
   const files: Record<string, string> = {};
   for (const f of manifest.standardFiles) {
     if (manifest.hashes[f.path]) files[f.path] = manifest.hashes[f.path];
@@ -161,6 +181,7 @@ export async function applyUpgrade(
     toVersion: manifest.version,
     updated,
     conflicts: analysis.conflicts,
+    replaced,
     backedUp,
     recordPath,
   };
@@ -170,14 +191,17 @@ async function appendRecord(
   vault: Vault,
   recordPath: string,
   manifest: StandardManifest,
-  analysis: UpgradeAnalysis
+  analysis: UpgradeAnalysis,
+  replaced: string[]
 ) {
+  const kept = analysis.conflicts.filter((c) => !replaced.includes(c.path)).map((c) => c.path);
   const section = [
     `## ${today()} · v${analysis.fromVersion} → v${manifest.version}`,
     `- 变更文件：${analysis.targets.length > 0 ? analysis.targets.join("、") : "（无）"}`,
     `- 直接更新：${analysis.clean.length > 0 ? analysis.clean.join("、") : "（无）"}`,
     `- 新建文件：${analysis.newFiles.length > 0 ? analysis.newFiles.join("、") : "（无）"}`,
-    `- 冲突（保留本地，未覆盖）：${analysis.conflicts.length > 0 ? analysis.conflicts.map((c) => c.path).join("、") : "（无）"}`,
+    `- 冲突（你选择替换为官方新版）：${replaced.length > 0 ? replaced.join("、") : "（无）"}`,
+    `- 冲突（保留本地，未覆盖）：${kept.length > 0 ? kept.join("、") : "（无）"}`,
     `- 备份：seedraft-backup/v${analysis.fromVersion}/`,
     "",
   ].join("\n");
