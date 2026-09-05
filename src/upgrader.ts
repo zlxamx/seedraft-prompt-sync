@@ -99,16 +99,27 @@ export async function applyUpgrade(
     const full = normalizePath(project.rootPath + relPath);
     await ensureParent(full);
     const existing = vault.getAbstractFileByPath(full);
-    if (existing instanceof TFile) await vault.modify(existing, content);
-    else await vault.create(full, content);
+    if (existing instanceof TFile) {
+      await vault.modify(existing, content);
+    } else if (await vault.adapter.exists(full)) {
+      // 磁盘有但索引未刷新（iCloud 延迟/中断残留）：直接覆盖
+      await vault.adapter.write(full, content);
+    } else {
+      await vault.create(full, content);
+    }
   };
 
   const backupFile = async (relPath: string, content: string) => {
     const backupPath = normalizePath(`${backupDir}/${relPath}`);
     await ensureParent(backupPath);
     const existingBackup = vault.getAbstractFileByPath(backupPath);
-    if (existingBackup instanceof TFile) await vault.modify(existingBackup, content);
-    else await vault.create(backupPath, content);
+    if (existingBackup instanceof TFile) {
+      await vault.modify(existingBackup, content);
+    } else if (await vault.adapter.exists(backupPath)) {
+      await vault.adapter.write(backupPath, content);
+    } else {
+      await vault.create(backupPath, content);
+    }
   };
 
   // 1. 备份 + 覆盖 clean 文件
@@ -208,6 +219,13 @@ async function appendRecord(
 
   const existing = vault.getAbstractFileByPath(recordPath);
   const existingText = existing instanceof TFile ? await vault.read(existing) : null;
+  if (existingText == null && (await vault.adapter.exists(recordPath))) {
+    // 磁盘有但索引未刷新：直接读取并覆盖
+    const diskText = await vault.adapter.read(recordPath);
+    const diskBody = diskText.trimEnd() + "\n\n" + section;
+    await vault.adapter.write(recordPath, diskBody);
+    return;
+  }
   if (existingText == null) {
     const parent = recordPath.substring(0, recordPath.lastIndexOf("/"));
     if (parent && !vault.getFolderByPath(parent)) {
