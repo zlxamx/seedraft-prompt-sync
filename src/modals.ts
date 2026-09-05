@@ -1,5 +1,5 @@
 import type { App } from "obsidian";
-import { ButtonComponent, FuzzySuggestModal, Modal, Notice } from "obsidian";
+import { ButtonComponent, Component, FuzzySuggestModal, MarkdownRenderer, Modal, Notice } from "obsidian";
 import type { FileDiff } from "./diffview";
 
 const STATUS_TEXT: Record<FileDiff["status"], string> = {
@@ -14,7 +14,7 @@ const STATUS_CLS: Record<FileDiff["status"], string> = {
   conflict: "seedraft-diff-status-conflict",
 };
 
-/** 升级确认弹窗：展示迁移摘要、逐文件可展开的行级 diff（冲突文件可勾选“替换”）与升级说明。 */
+/** 升级确认弹窗：展示迁移摘要、逐文件可展开的行级 diff（冲突文件可勾选“替换”）、渲染后的升级说明。 */
 export class ConfirmUpgradeModal extends Modal {
   private title: string;
   private lines: string[];
@@ -22,8 +22,10 @@ export class ConfirmUpgradeModal extends Modal {
   private onConfirm: (replacePaths: string[]) => Promise<void>;
   private onCancel: () => void;
   private confirmText: string;
+  private migrationMarkdown?: string;
   private busy = false;
   private replaceSet = new Set<string>();
+  private renderComp = new Component();
 
   constructor(
     app: App,
@@ -32,7 +34,8 @@ export class ConfirmUpgradeModal extends Modal {
     diffs: FileDiff[],
     onConfirm: (replacePaths: string[]) => Promise<void>,
     onCancel: () => void,
-    confirmText = "执行升级"
+    confirmText = "执行升级",
+    migrationMarkdown?: string
   ) {
     super(app);
     this.title = title;
@@ -41,9 +44,10 @@ export class ConfirmUpgradeModal extends Modal {
     this.onConfirm = onConfirm;
     this.onCancel = onCancel;
     this.confirmText = confirmText;
+    this.migrationMarkdown = migrationMarkdown;
   }
 
-  onOpen(): void {
+  async onOpen(): Promise<void> {
     const { contentEl } = this;
     contentEl.addClass("seedraft-modal");
     contentEl.createEl("h3", { text: this.title });
@@ -51,6 +55,16 @@ export class ConfirmUpgradeModal extends Modal {
     const list = contentEl.createEl("div", { cls: "seedraft-confirm-list" });
     for (const line of this.lines) {
       list.createEl("div", { cls: "seedraft-confirm-line", text: line });
+    }
+
+    // 升级说明卡片（Markdown 渲染）
+    if (this.migrationMarkdown) {
+      const wrap = contentEl.createDiv({ cls: "seedraft-migration" });
+      wrap.createEl("div", { cls: "seedraft-migration-title", text: "升级说明" });
+      const body = wrap.createDiv({ cls: "seedraft-migration-body" });
+      // 去掉首行“# 升级说明：X → Y”（与卡片标题重复）
+      const md = this.migrationMarkdown.replace(/^#\s[^\n]*\n?/, "");
+      await MarkdownRenderer.render(this.app, md, body, "", this.renderComp);
     }
 
     // 逐文件可展开 diff
@@ -138,6 +152,7 @@ export class ConfirmUpgradeModal extends Modal {
   }
 
   onClose(): void {
+    this.renderComp.unload();
     this.contentEl.empty();
   }
 }

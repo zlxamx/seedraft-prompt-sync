@@ -267,3 +267,66 @@
   color: var(--interactive-accent);
   border-color: var(--interactive-accent);
 }
+
+/* ── 升级说明卡片 ── */
+.seedraft-migration {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  margin-top: 12px;
+  background: var(--background-secondary);
+  overflow: hidden;
+}
+
+.seedraft-migration-title {
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 0.85em;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.seedraft-migration-body {
+  padding: 10px 14px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.seedraft-migration-body h1,
+.seedraft-migration-body h2 {
+  font-size: 1.02em;
+  margin: 10px 0 4px;
+  color: var(--text-normal);
+}
+
+.seedraft-migration-body h3 {
+  font-size: 0.95em;
+  margin: 8px 0 4px;
+}
+
+.seedraft-migration-body h2:first-child,
+.seedraft-migration-body h3:first-child,
+.seedraft-migration-body p:first-child {
+  margin-top: 0;
+}
+
+.seedraft-migration-body p {
+  margin: 4px 0;
+}
+
+.seedraft-migration-body ul {
+  padding-left: 20px;
+  margin: 4px 0;
+}
+
+.seedraft-migration-body li {
+  margin: 2px 0;
+}
+
+.seedraft-migration-body hr {
+  margin: 8px 0;
+}
+
+.seedraft-migration-body strong {
+  font-weight: 700;
+}

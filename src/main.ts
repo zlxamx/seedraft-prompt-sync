@@ -179,10 +179,6 @@ export default class SeedraftSyncPlugin extends Plugin {
     if (analysis.missingInZip.length > 0) {
       lines.push(`⚠ 发布包缺少：${analysis.missingInZip.join("、")}（本次跳过）`);
     }
-    if (migrationText) {
-      lines.push("", "———— 升级说明 ————");
-      for (const l of migrationText.split("\n")) lines.push(l);
-    }
 
     // 逐文件行级 diff：直接更新/冲突 = B 侧现状 vs 新版本；新建 = 空 vs 新版本
     const diffs: FileDiff[] = [];
@@ -227,7 +223,9 @@ export default class SeedraftSyncPlugin extends Plugin {
       },
       () => {
         /* 取消 */
-      }
+      },
+      undefined,
+      migrationText ?? undefined
     ).open();
   }
 
